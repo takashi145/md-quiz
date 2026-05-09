@@ -35,12 +35,13 @@ const HEADING_RE = /^##\s+(.+)$/;
 const CHOICE_RE = /^-\s+\[([ x])\]\s+(.+)$/i;
 
 const FENCE_RE = /^```/;
+const FILL_RE = /\[\[([^\]\n]+)\]\]/g;
 const INPUT_TAG = '<input class="mq-input" type="text" autocomplete="off">';
 
-// Replace {answer} with input tag, skipping content inside <pre> blocks
+// Replace [[answer]] with input tag, skipping content inside code.
 function injectInput(html: string): string {
-  return html.replace(/(<pre>[\s\S]*?<\/pre>)|\{[^}]+\}/g, (_match, pre) =>
-    pre !== undefined ? pre : INPUT_TAG,
+  return html.replace(/(<pre>[\s\S]*?<\/pre>|<code>[\s\S]*?<\/code>)|\[\[[^\]\n]+\]\]/g, (_match, code) =>
+    code !== undefined ? code : INPUT_TAG,
   );
 }
 
@@ -58,13 +59,17 @@ function parseFrontMatter(markdown: string): { meta: QuizMeta; rest: string } {
 function findFillAnswers(heading: string, lines: string[]): string[] {
   const answers: string[] = [];
 
-  for (const m of heading.matchAll(/\{([^}]+)\}/g)) answers.push(m[1]);
+  for (const m of heading.replace(/`[^`]+`/g, '').matchAll(FILL_RE)) {
+    answers.push(m[1].trim());
+  }
 
   let inFence = false;
   for (const line of lines) {
     if (FENCE_RE.test(line)) { inFence = !inFence; continue; }
     if (inFence) continue;
-    for (const m of line.matchAll(/\{([^}]+)\}/g)) answers.push(m[1]);
+    for (const m of line.replace(/`[^`]+`/g, '').matchAll(FILL_RE)) {
+      answers.push(m[1].trim());
+    }
   }
 
   return answers;
