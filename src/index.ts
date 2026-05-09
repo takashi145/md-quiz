@@ -1,8 +1,9 @@
+export { parse } from './parser.js';
 import { parse } from './parser.js';
 import { createQuiz } from './quiz.js';
 import type { QuizInstance } from './quiz.js';
 
-export type { Choice, Question, QuizMeta } from './parser.js';
+export type { Choice, ParseResult, ParseWarning, ParseWarningCode, Question, QuizMeta } from './parser.js';
 export type { QuizInstance } from './quiz.js';
 
 export async function loadQuiz(

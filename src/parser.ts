@@ -29,6 +29,19 @@ export interface QuizMeta {
 export interface ParseResult {
   meta: QuizMeta;
   questions: Question[];
+  warnings: ParseWarning[];
+}
+
+export type ParseWarningCode =
+  | 'empty-question'
+  | 'choice-without-correct-answer'
+  | 'choice-with-multiple-correct-answers';
+
+export interface ParseWarning {
+  code: ParseWarningCode;
+  message: string;
+  heading: string;
+  line: number;
 }
 
 const HEADING_RE = /^##\s+(.+)$/;
@@ -45,15 +58,18 @@ function injectInput(html: string): string {
   );
 }
 
-function parseFrontMatter(markdown: string): { meta: QuizMeta; rest: string } {
+function parseFrontMatter(markdown: string): { meta: QuizMeta; rest: string; lineOffset: number } {
   const match = markdown.match(/^---\r?\n([\s\S]*?)\r?\n---\r?\n([\s\S]*)$/);
-  if (!match) return { meta: {}, rest: markdown };
+  if (!match) return { meta: {}, rest: markdown, lineOffset: 0 };
 
   const meta: QuizMeta = {};
   const titleMatch = match[1].match(/^title:\s*(.+)$/m);
   if (titleMatch) meta.title = titleMatch[1].trim();
 
-  return { meta, rest: match[2] };
+  const frontMatterEnd = markdown.indexOf(match[2]);
+  const lineOffset = markdown.slice(0, frontMatterEnd).split(/\r?\n/).length - 1;
+
+  return { meta, rest: match[2], lineOffset };
 }
 
 function findFillAnswers(heading: string, lines: string[]): string[] {
@@ -96,18 +112,20 @@ function splitBodyAndChoices(lines: string[]): { bodyLines: string[]; choiceLine
 }
 
 export function parse(markdown: string): ParseResult {
-  const { meta, rest } = parseFrontMatter(markdown);
+  const { meta, rest, lineOffset } = parseFrontMatter(markdown);
   const lines = rest.split('\n');
   const questions: Question[] = [];
+  const warnings: ParseWarning[] = [];
 
-  const sections: { heading: string; lines: string[] }[] = [];
-  let current: { heading: string; lines: string[] } | null = null;
+  const sections: { heading: string; lines: string[]; line: number }[] = [];
+  let current: { heading: string; lines: string[]; line: number } | null = null;
 
-  for (const line of lines) {
+  for (let i = 0; i < lines.length; i++) {
+    const line = lines[i];
     const headingMatch = line.match(HEADING_RE);
     if (headingMatch) {
       if (current) sections.push(current);
-      current = { heading: headingMatch[1].trim(), lines: [] };
+      current = { heading: headingMatch[1].trim(), lines: [], line: lineOffset + i + 1 };
     } else if (current) {
       current.lines.push(line);
     }
@@ -133,7 +151,32 @@ export function parse(markdown: string): ParseResult {
       return { text: m[2].trim(), correct: m[1].toLowerCase() === 'x' };
     });
 
-    if (choices.length === 0) continue;
+    if (choices.length === 0) {
+      warnings.push({
+        code: 'empty-question',
+        message: 'Question has no fill-in answers or choices.',
+        heading: section.heading,
+        line: section.line,
+      });
+      continue;
+    }
+
+    const correctCount = choices.filter((choice) => choice.correct).length;
+    if (correctCount === 0) {
+      warnings.push({
+        code: 'choice-without-correct-answer',
+        message: 'Choice question has no correct answer.',
+        heading: section.heading,
+        line: section.line,
+      });
+    } else if (correctCount > 1) {
+      warnings.push({
+        code: 'choice-with-multiple-correct-answers',
+        message: 'Choice question has multiple correct answers.',
+        heading: section.heading,
+        line: section.line,
+      });
+    }
 
     questions.push({
       type: 'choice',
@@ -143,5 +186,5 @@ export function parse(markdown: string): ParseResult {
     });
   }
 
-  return { meta, questions };
+  return { meta, questions, warnings };
 }
