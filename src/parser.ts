@@ -128,7 +128,7 @@ export function parse(markdown: string): ParseResult {
       return { text: m[2].trim(), correct: m[1].toLowerCase() === 'x' };
     });
 
-    if (choices.length < 2) continue;
+    if (choices.length === 0) continue;
 
     questions.push({
       type: 'choice',
