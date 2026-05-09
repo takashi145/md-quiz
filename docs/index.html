@@ -1,0 +1,129 @@
+<!DOCTYPE html>
+<html lang="ja">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>md-quiz demo</title>
+  <style>
+    *, *::before, *::after { box-sizing: border-box; }
+
+    body {
+      font-family: system-ui, sans-serif;
+      max-width: 640px;
+      margin: 2rem auto;
+      padding: 0 1rem;
+      color: #1a1a1a;
+    }
+
+    .mq-quiz {
+      display: flex;
+      flex-direction: column;
+      gap: 2rem;
+    }
+
+    .mq-question {
+      border: 1px solid #e0e0e0;
+      border-radius: 8px;
+      padding: 1.25rem;
+    }
+
+    .mq-question-text {
+      font-weight: 600;
+      margin: 0 0 0.75rem;
+    }
+
+    .mq-body pre {
+      background: #f5f5f5;
+      border-radius: 6px;
+      padding: 0.75rem 1rem;
+      overflow-x: auto;
+      margin: 0.75rem 0;
+    }
+
+    .mq-body p { margin: 0.5rem 0; }
+    .mq-body ul { margin: 0.5rem 0; padding-left: 1.5rem; }
+
+    .mq-choices {
+      list-style: none;
+      margin: 0.75rem 0 0;
+      padding: 0;
+      display: flex;
+      flex-direction: column;
+      gap: 0.5rem;
+    }
+
+    .mq-choice {
+      padding: 0.6rem 1rem;
+      border: 1px solid #d0d0d0;
+      border-radius: 6px;
+      cursor: pointer;
+      transition: background 0.15s, border-color 0.15s;
+    }
+
+    .mq-choice:hover {
+      background: #f5f5f5;
+      border-color: #aaa;
+    }
+
+    .mq-question--answered .mq-choice {
+      cursor: default;
+      pointer-events: none;
+    }
+
+    .mq-choice--selected {
+      border-color: #888;
+      background: #f0f0f0;
+    }
+
+    .mq-question--correct .mq-choice--selected,
+    .mq-choice--correct {
+      border-color: #22a854;
+      background: #edfbf2;
+      color: #166534;
+    }
+
+    .mq-question--incorrect .mq-choice--selected {
+      border-color: #dc2626;
+      background: #fef2f2;
+      color: #991b1b;
+    }
+
+    .mq-score {
+      text-align: right;
+      font-size: 1.25rem;
+      font-weight: 700;
+      color: #555;
+    }
+
+    code {
+      background: #f3f3f3;
+      padding: 0.1em 0.4em;
+      border-radius: 4px;
+      font-size: 0.9em;
+    }
+
+    pre code {
+      background: none;
+      padding: 0;
+    }
+  </style>
+</head>
+<body>
+  <div id="app"></div>
+  <script type="module">
+    import { loadQuiz } from '../src/index.ts';
+
+    const quiz = await loadQuiz('./quiz.md', document.getElementById('app'));
+
+    if (quiz.title) {
+      const h1 = document.createElement('h1');
+      h1.textContent = quiz.title;
+      document.getElementById('app').prepend(h1);
+    }
+
+    document.getElementById('app').addEventListener('mq-complete', (e) => {
+      console.log(`完了: ${e.detail.score} / ${e.detail.total}`);
+    });
+  </script>
+</body>
+</html>
