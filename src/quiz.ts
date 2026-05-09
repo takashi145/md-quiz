@@ -33,9 +33,12 @@ function buildQuestionEl(q: Question, index: number): HTMLElement {
     ul.className = 'mq-choices';
     for (const c of q.choices) {
       const li = document.createElement('li');
-      li.className = 'mq-choice';
-      li.dataset.correct = String(c.correct);
-      li.innerHTML = parseInline(c.text);
+      const btn = document.createElement('button');
+      btn.className = 'mq-choice';
+      btn.type = 'button';
+      btn.dataset.correct = String(c.correct);
+      btn.innerHTML = parseInline(c.text);
+      li.appendChild(btn);
       ul.appendChild(li);
     }
     qEl.appendChild(ul);

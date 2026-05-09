@@ -96,9 +96,15 @@ body {
 }
 
 .mq-choice {
+  display: block;
+  width: 100%;
   padding: 0.625rem 1rem;
   border: 1.5px solid var(--border);
   border-radius: var(--radius-sm);
+  background: var(--surface);
+  color: var(--text);
+  font-family: inherit;
+  text-align: left;
   font-size: 0.875rem;
   font-weight: 500;
   cursor: pointer;
@@ -116,6 +122,10 @@ body {
 .mq-question--answered .mq-choice {
   cursor: default;
   pointer-events: none;
+}
+
+.mq-question--answered .mq-choice:disabled {
+  opacity: 1;
 }
 
 .mq-choice--selected {
