@@ -7,6 +7,12 @@ export interface QuizInstance {
   reset(): void;
 }
 
+export interface QuizAnswerEventDetail {
+  index: number;
+  correct: boolean;
+  answers: string[];
+}
+
 function buildQuestionEl(q: Question, index: number): HTMLElement {
   const qEl = document.createElement('div');
   qEl.className = `mq-question mq-question--${q.type}`;
@@ -84,14 +90,17 @@ export function createQuiz(
   let root = buildDOM(questions);
   container.appendChild(root);
 
-  function applyResult(qEl: HTMLElement, index: number, correct: boolean): void {
+  function applyResult(qEl: HTMLElement, index: number, correct: boolean, answers: string[]): void {
     qEl.classList.add('mq-question--answered');
     qEl.classList.add(correct ? 'mq-question--correct' : 'mq-question--incorrect');
     if (correct) score++;
     root.querySelector('.mq-score__current')!.textContent = String(score);
 
     container.dispatchEvent(
-      new CustomEvent('mq-answer', { bubbles: true, detail: { index, correct } }),
+      new CustomEvent<QuizAnswerEventDetail>('mq-answer', {
+        bubbles: true,
+        detail: { index, correct, answers },
+      }),
     );
 
     if (answered.size === questions.length) {
@@ -110,10 +119,11 @@ export function createQuiz(
 
     const correct = choice.dataset.correct === 'true';
     choice.classList.add('mq-choice--selected');
-    qEl.querySelectorAll<HTMLElement>('[data-correct="true"]').forEach((el) => {
+    const answers = Array.from(qEl.querySelectorAll<HTMLElement>('[data-correct="true"]'));
+    answers.forEach((el) => {
       el.classList.add('mq-choice--correct');
     });
-    applyResult(qEl, index, correct);
+    applyResult(qEl, index, correct, answers.map((el) => el.textContent?.trim() ?? ''));
   }
 
   function submitFill(qEl: HTMLElement, index: number): void {
@@ -130,18 +140,12 @@ export function createQuiz(
       if (!ok) correct = false;
       input.disabled = true;
       input.classList.add(ok ? 'mq-input--correct' : 'mq-input--incorrect');
-      if (!ok) {
-        const hint = document.createElement('span');
-        hint.className = 'mq-fill-hint';
-        hint.textContent = expected;
-        input.insertAdjacentElement('afterend', hint);
-      }
     });
 
     const btn = qEl.querySelector<HTMLButtonElement>('.mq-submit');
     if (btn) btn.disabled = true;
 
-    applyResult(qEl, index, correct);
+    applyResult(qEl, index, correct, q.answers);
   }
 
   function handleClick(e: Event): void {

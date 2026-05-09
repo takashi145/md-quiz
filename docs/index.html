@@ -17,6 +17,18 @@
     const app = document.getElementById('app');
     const quiz = await loadQuiz('./quiz.md', app);
 
+    app.addEventListener('mq-answer', (e) => {
+      if (e.detail.correct || e.detail.answers.length === 0) return;
+
+      const questionEl = app.querySelector(`[data-index="${e.detail.index}"]`);
+      if (!questionEl || questionEl.querySelector('.quiz-answer')) return;
+
+      const answer = document.createElement('p');
+      answer.className = 'quiz-answer';
+      answer.textContent = `正解: ${e.detail.answers.join(' / ')}`;
+      questionEl.appendChild(answer);
+    });
+
     app.addEventListener('mq-complete', (e) => {
       const banner = document.createElement('div');
       banner.style.cssText = `
