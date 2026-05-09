@@ -12,7 +12,7 @@
 <body>
   <div id="app"></div>
   <script type="module">
-    import { loadQuiz } from '../src/index.ts';
+    import { loadQuiz } from './md-quiz.js';
 
     const app = document.getElementById('app');
     const quiz = await loadQuiz('./quiz.md', app);
