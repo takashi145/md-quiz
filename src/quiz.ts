@@ -1,8 +1,7 @@
 import { parseInline } from './inline.js';
-import type { Question, QuizMeta } from './parser.js';
+import type { Question } from './parser.js';
 
 export interface QuizInstance {
-  readonly title: string | undefined;
   readonly total: number;
   readonly score: number;
   reset(): void;
@@ -74,7 +73,6 @@ function buildDOM(questions: Question[]): HTMLElement {
 }
 
 export function createQuiz(
-  meta: QuizMeta,
   questions: Question[],
   container: HTMLElement,
 ): QuizInstance {
@@ -179,7 +177,6 @@ export function createQuiz(
   root.addEventListener('keydown', handleKeydown);
 
   return {
-    get title() { return meta.title; },
     get total() { return questions.length; },
     get score() { return score; },
     reset() {

@@ -22,12 +22,7 @@ export interface FillQuestion {
 
 export type Question = ChoiceQuestion | FillQuestion;
 
-export interface QuizMeta {
-  title?: string;
-}
-
 export interface ParseResult {
-  meta: QuizMeta;
   questions: Question[];
   warnings: ParseWarning[];
 }
@@ -56,20 +51,6 @@ function injectInput(html: string): string {
   return html.replace(/(<pre>[\s\S]*?<\/pre>|<code>[\s\S]*?<\/code>)|\[\[[^\]\n]+\]\]/g, (_match, code) =>
     code !== undefined ? code : INPUT_TAG,
   );
-}
-
-function parseFrontMatter(markdown: string): { meta: QuizMeta; rest: string; lineOffset: number } {
-  const match = markdown.match(/^---\r?\n([\s\S]*?)\r?\n---\r?\n([\s\S]*)$/);
-  if (!match) return { meta: {}, rest: markdown, lineOffset: 0 };
-
-  const meta: QuizMeta = {};
-  const titleMatch = match[1].match(/^title:\s*(.+)$/m);
-  if (titleMatch) meta.title = titleMatch[1].trim();
-
-  const frontMatterEnd = markdown.indexOf(match[2]);
-  const lineOffset = markdown.slice(0, frontMatterEnd).split(/\r?\n/).length - 1;
-
-  return { meta, rest: match[2], lineOffset };
 }
 
 function findFillAnswers(heading: string, lines: string[]): string[] {
@@ -112,8 +93,7 @@ function splitBodyAndChoices(lines: string[]): { bodyLines: string[]; choiceLine
 }
 
 export function parse(markdown: string): ParseResult {
-  const { meta, rest, lineOffset } = parseFrontMatter(markdown);
-  const lines = rest.split('\n');
+  const lines = markdown.split('\n');
   const questions: Question[] = [];
   const warnings: ParseWarning[] = [];
 
@@ -125,7 +105,7 @@ export function parse(markdown: string): ParseResult {
     const headingMatch = line.match(HEADING_RE);
     if (headingMatch) {
       if (current) sections.push(current);
-      current = { heading: headingMatch[1].trim(), lines: [], line: lineOffset + i + 1 };
+      current = { heading: headingMatch[1].trim(), lines: [], line: i + 1 };
     } else if (current) {
       current.lines.push(line);
     }
@@ -186,5 +166,5 @@ export function parse(markdown: string): ParseResult {
     });
   }
 
-  return { meta, questions, warnings };
+  return { questions, warnings };
 }

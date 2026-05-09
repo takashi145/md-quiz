@@ -17,19 +17,6 @@
     const app = document.getElementById('app');
     const quiz = await loadQuiz('./quiz.md', app);
 
-    if (quiz.title) {
-      const header = document.createElement('div');
-      const h1 = document.createElement('h1');
-      h1.id = 'quiz-title';
-      h1.textContent = quiz.title;
-      const meta = document.createElement('p');
-      meta.id = 'quiz-meta';
-      meta.textContent = `全 ${quiz.total} 問`;
-      header.appendChild(h1);
-      header.appendChild(meta);
-      app.prepend(header);
-    }
-
     app.addEventListener('mq-complete', (e) => {
       const banner = document.createElement('div');
       banner.style.cssText = `
