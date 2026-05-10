@@ -20,12 +20,14 @@ export interface QuizOptions {
   submitLabel?: string;
   autoDisableSubmit?: boolean;
   shuffleChoices?: boolean;
+  shuffleQuestions?: boolean;
 }
 
 interface ResolvedQuizOptions {
   submitLabel: string;
   autoDisableSubmit: boolean;
   shuffleChoices: boolean;
+  shuffleQuestions: boolean;
 }
 
 function resolveOptions(options: QuizOptions = {}): ResolvedQuizOptions {
@@ -33,6 +35,7 @@ function resolveOptions(options: QuizOptions = {}): ResolvedQuizOptions {
     submitLabel: options.submitLabel ?? '確認',
     autoDisableSubmit: options.autoDisableSubmit ?? false,
     shuffleChoices: options.shuffleChoices ?? false,
+    shuffleQuestions: options.shuffleQuestions ?? false,
   };
 }
 
@@ -47,6 +50,10 @@ function shuffle<T>(items: T[]): T[] {
 
 function getChoices(choices: Choice[], options: ResolvedQuizOptions): Choice[] {
   return options.shuffleChoices ? shuffle(choices) : choices;
+}
+
+function getQuestions(questions: Question[], options: ResolvedQuizOptions): Question[] {
+  return options.shuffleQuestions ? shuffle(questions) : [...questions];
 }
 
 function buildSubmitButton(options: ResolvedQuizOptions): HTMLButtonElement {
@@ -125,7 +132,8 @@ export function createQuiz(
 ): QuizInstance {
   const answered = new Set<number>();
   const resolvedOptions = resolveOptions(options);
-  let root = buildDOM(questions, resolvedOptions);
+  let activeQuestions = getQuestions(questions, resolvedOptions);
+  let root = buildDOM(activeQuestions, resolvedOptions);
   container.appendChild(root);
 
   function isQuestionReady(qEl: HTMLElement): boolean {
@@ -162,11 +170,11 @@ export function createQuiz(
       }),
     );
 
-    if (answered.size === questions.length) {
+    if (answered.size === activeQuestions.length) {
       container.dispatchEvent(
         new CustomEvent<QuizCompleteEventDetail>('mq-complete', {
           bubbles: true,
-          detail: { total: questions.length },
+          detail: { total: activeQuestions.length },
         }),
       );
     }
@@ -232,7 +240,7 @@ export function createQuiz(
     if (inputs.length === 0) return;
     answered.add(index);
 
-    const q = questions[index] as import('./parser.js').FillQuestion;
+    const q = activeQuestions[index] as import('./parser.js').FillQuestion;
     let correct = true;
     Array.from(inputs).forEach((input, i) => {
       const expected = q.answers[i] ?? '';
@@ -300,7 +308,7 @@ export function createQuiz(
   root.addEventListener('keydown', handleKeydown);
 
   return {
-    get total() { return questions.length; },
+    get total() { return activeQuestions.length; },
     reset() {
       answered.clear();
       root.removeEventListener('click', handleClick);
@@ -310,7 +318,8 @@ export function createQuiz(
       }
       root.removeEventListener('keydown', handleKeydown);
       container.removeChild(root);
-      root = buildDOM(questions, resolvedOptions);
+      activeQuestions = getQuestions(questions, resolvedOptions);
+      root = buildDOM(activeQuestions, resolvedOptions);
       container.appendChild(root);
       root.addEventListener('click', handleClick);
       if (resolvedOptions.autoDisableSubmit) {
