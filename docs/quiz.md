@@ -75,3 +75,9 @@ console.log(1 + "2" + 3);
 - [ ] 渡した Promise を順番に実行する
 - [x] すべての Promise が fulfilled になったとき解決される
 - [ ] いずれかが fulfilled になった時点で解決される
+
+## `Number.isNaN(NaN)` の評価結果は？
+
+- ( ) `false`
+- (x) `true`
+- ( ) エラーになる

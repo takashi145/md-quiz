@@ -96,7 +96,9 @@ body {
 }
 
 .mq-choice {
-  display: block;
+  display: flex;
+  align-items: center;
+  gap: 0.625rem;
   width: 100%;
   padding: 0.625rem 1rem;
   border: 1.5px solid var(--border);
@@ -104,7 +106,6 @@ body {
   background: var(--surface);
   color: var(--text);
   font-family: inherit;
-  text-align: left;
   font-size: 0.875rem;
   font-weight: 500;
   cursor: pointer;
@@ -119,13 +120,43 @@ body {
   color: var(--accent);
 }
 
+.mq-radio,
+.mq-checkbox {
+  appearance: none;
+  -webkit-appearance: none;
+  flex-shrink: 0;
+  width: 1rem;
+  height: 1rem;
+  border: 1.5px solid var(--border);
+  border-radius: 50%;
+  background: var(--surface);
+  transition: border-color 0.15s, background 0.15s, box-shadow 0.15s;
+  cursor: inherit;
+}
+
+.mq-checkbox { border-radius: 3px; }
+
+.mq-choice:hover .mq-radio,
+.mq-choice:hover .mq-checkbox {
+  border-color: var(--accent);
+}
+
+.mq-radio:checked {
+  border-color: var(--accent);
+  background: var(--accent);
+  box-shadow: inset 0 0 0 3px var(--surface);
+}
+
+.mq-checkbox:checked {
+  border-color: var(--accent);
+  background: var(--accent);
+  background-image: url("data:image/svg+xml,%3Csvg viewBox='0 0 10 10' xmlns='http://www.w3.org/2000/svg'%3E%3Cpath d='M2 5l2.5 2.5L8 3' stroke='white' stroke-width='1.5' fill='none' stroke-linecap='round' stroke-linejoin='round'/%3E%3C/svg%3E");
+  background-size: 100%;
+}
+
 .mq-question--answered .mq-choice {
   cursor: default;
   pointer-events: none;
-}
-
-.mq-question--answered .mq-choice:disabled {
-  opacity: 1;
 }
 
 .mq-choice--selected {
@@ -141,9 +172,17 @@ body {
   font-weight: 700;
 }
 
+.mq-choice--correct .mq-radio:checked,
+.mq-choice--correct .mq-checkbox:checked {
+  border-color: var(--success);
+  background: var(--success);
+  box-shadow: inset 0 0 0 3px var(--success-light);
+}
+
 .mq-choice--correct::after {
   content: '✓ 正解';
-  float: right;
+  margin-left: auto;
+  flex-shrink: 0;
   font-size: 0.75rem;
   font-weight: 700;
   opacity: 0.8;
@@ -162,9 +201,17 @@ body {
   color: var(--error);
 }
 
+.mq-question--incorrect .mq-choice--selected .mq-radio:checked,
+.mq-question--incorrect .mq-choice--selected .mq-checkbox:checked {
+  border-color: var(--error);
+  background: var(--error);
+  box-shadow: inset 0 0 0 3px var(--error-light);
+}
+
 .mq-question--incorrect .mq-choice--selected::after {
   content: '✗';
-  float: right;
+  margin-left: auto;
+  flex-shrink: 0;
   font-size: 0.875rem;
   font-weight: 700;
 }
