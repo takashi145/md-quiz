@@ -10,6 +10,7 @@ export interface QuizAnswerEventDetail {
   index: number;
   correct: boolean;
   answers: string[];
+  inputResults?: boolean[];
 }
 
 export interface QuizCompleteEventDetail {
@@ -159,14 +160,23 @@ export function createQuiz(
     btn.disabled = !isQuestionReady(qEl);
   }
 
-  function applyResult(qEl: HTMLElement, index: number, correct: boolean, answers: string[]): void {
+  function applyResult(
+    qEl: HTMLElement,
+    index: number,
+    correct: boolean,
+    answers: string[],
+    inputResults?: boolean[],
+  ): void {
     qEl.classList.add('mq-question--answered');
     qEl.classList.add(correct ? 'mq-question--correct' : 'mq-question--incorrect');
+
+    const detail: QuizAnswerEventDetail = { index, correct, answers };
+    if (inputResults) detail.inputResults = inputResults;
 
     container.dispatchEvent(
       new CustomEvent<QuizAnswerEventDetail>('mq-answer', {
         bubbles: true,
-        detail: { index, correct, answers },
+        detail,
       }),
     );
 
@@ -242,9 +252,11 @@ export function createQuiz(
 
     const q = activeQuestions[index] as import('./parser.js').FillQuestion;
     let correct = true;
+    const inputResults: boolean[] = [];
     Array.from(inputs).forEach((input, i) => {
       const expected = q.answers[i] ?? '';
       const ok = input.value.trim().toLowerCase() === expected.trim().toLowerCase();
+      inputResults.push(ok);
       if (!ok) correct = false;
       input.disabled = true;
       input.classList.add(ok ? 'mq-input--correct' : 'mq-input--incorrect');
@@ -253,7 +265,7 @@ export function createQuiz(
     const btn = qEl.querySelector<HTMLButtonElement>('.mq-submit');
     if (btn) btn.disabled = true;
 
-    applyResult(qEl, index, correct, q.answers);
+    applyResult(qEl, index, correct, q.answers, inputResults);
   }
 
   function handleClick(e: Event): void {

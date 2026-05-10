@@ -269,10 +269,30 @@ body {
 
 .quiz-answer {
   margin-top: 0.875rem;
-  font-family: 'JetBrains Mono', monospace;
+  display: grid;
+  gap: 0.5rem;
   font-size: 0.8125rem;
   font-weight: 600;
+}
+
+.quiz-answer__line {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 0.375rem;
+}
+
+.quiz-answer__label {
   color: var(--success);
+}
+
+.quiz-answer__chip {
+  font-family: 'JetBrains Mono', monospace;
+  background: var(--success-light);
+  color: var(--success);
+  border: 1px solid var(--success-border);
+  padding: 0.15em 0.45em;
+  border-radius: 4px;
 }
 
 code {

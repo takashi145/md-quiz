@@ -28,9 +28,24 @@
       const questionEl = app.querySelector(`[data-index="${e.detail.index}"]`);
       if (!questionEl || questionEl.querySelector('.quiz-answer')) return;
 
-      const answer = document.createElement('p');
+      const answer = document.createElement('div');
       answer.className = 'quiz-answer';
-      answer.textContent = `正解: ${e.detail.answers.join(' / ')}`;
+
+      const answerLine = document.createElement('p');
+      answerLine.className = 'quiz-answer__line';
+      const answerLabel = document.createElement('span');
+      answerLabel.className = 'quiz-answer__label';
+      answerLabel.textContent = '正答';
+      answerLine.appendChild(answerLabel);
+
+      for (const value of e.detail.answers) {
+        const chip = document.createElement('code');
+        chip.className = 'quiz-answer__chip';
+        chip.textContent = value;
+        answerLine.appendChild(chip);
+      }
+      answer.appendChild(answerLine);
+
       questionEl.appendChild(answer);
     });
 

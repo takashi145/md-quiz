@@ -111,8 +111,12 @@ interface QuizAnswerEventDetail {
   index: number;
   correct: boolean;
   answers: string[];
+  inputResults?: boolean[];
 }
 ```
+
+穴埋め問題では、`inputResults` に各入力欄の正誤が入ります。例えば2つの入力欄のうち1つ目だけ正解だった場合は `[true, false]` になります。
+選択問題では `inputResults` は付きません。
 
 全問回答後に `mq-complete` を発火します。
 
