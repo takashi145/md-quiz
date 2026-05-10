@@ -1,14 +1,16 @@
 export { parse } from './parser.js';
+export { createQuiz } from './quiz.js';
 import { parse } from './parser.js';
 import { createQuiz } from './quiz.js';
-import type { QuizInstance } from './quiz.js';
+import type { QuizInstance, QuizOptions } from './quiz.js';
 
 export type { Choice, ParseResult, ParseWarning, ParseWarningCode, Question } from './parser.js';
-export type { QuizAnswerEventDetail, QuizInstance } from './quiz.js';
+export type { QuizAnswerEventDetail, QuizInstance, QuizOptions } from './quiz.js';
 
 export async function loadQuiz(
   src: string,
   container: HTMLElement,
+  options?: QuizOptions,
 ): Promise<QuizInstance> {
   const res = await fetch(src);
   if (!res.ok) {
@@ -16,5 +18,5 @@ export async function loadQuiz(
   }
   const markdown = await res.text();
   const { questions } = parse(markdown);
-  return createQuiz(questions, container);
+  return createQuiz(questions, container, options);
 }

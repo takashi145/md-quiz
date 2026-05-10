@@ -15,7 +15,9 @@
     import { loadQuiz } from './md-quiz.js';
 
     const app = document.getElementById('app');
-    const quiz = await loadQuiz('./quiz.md', app);
+    const quiz = await loadQuiz('./quiz.md', app, {
+      submitLabel: '回答する',
+    });
 
     app.addEventListener('mq-answer', (e) => {
       if (e.detail.correct || e.detail.answers.length === 0) return;

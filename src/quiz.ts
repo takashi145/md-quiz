@@ -13,7 +13,29 @@ export interface QuizAnswerEventDetail {
   answers: string[];
 }
 
-function buildQuestionEl(q: Question, index: number): HTMLElement {
+export interface QuizOptions {
+  submitLabel?: string;
+}
+
+interface ResolvedQuizOptions {
+  submitLabel: string;
+}
+
+function resolveOptions(options: QuizOptions = {}): ResolvedQuizOptions {
+  return {
+    submitLabel: options.submitLabel ?? '確認',
+  };
+}
+
+function buildSubmitButton(label: string): HTMLButtonElement {
+  const btn = document.createElement('button');
+  btn.className = 'mq-submit';
+  btn.type = 'button';
+  btn.textContent = label;
+  return btn;
+}
+
+function buildQuestionEl(q: Question, index: number, options: ResolvedQuizOptions): HTMLElement {
   const qEl = document.createElement('div');
   qEl.className = q.type === 'choice'
     ? `mq-question mq-question--choice mq-question--${q.subtype}`
@@ -56,27 +78,19 @@ function buildQuestionEl(q: Question, index: number): HTMLElement {
       ul.appendChild(li);
     }
     qEl.appendChild(ul);
-    const btn = document.createElement('button');
-    btn.className = 'mq-submit';
-    btn.type = 'button';
-    btn.textContent = '確認';
-    qEl.appendChild(btn);
+    qEl.appendChild(buildSubmitButton(options.submitLabel));
   } else {
-    const btn = document.createElement('button');
-    btn.className = 'mq-submit';
-    btn.type = 'button';
-    btn.textContent = '確認';
-    qEl.appendChild(btn);
+    qEl.appendChild(buildSubmitButton(options.submitLabel));
   }
 
   return qEl;
 }
 
-function buildDOM(questions: Question[]): HTMLElement {
+function buildDOM(questions: Question[], options: ResolvedQuizOptions): HTMLElement {
   const root = document.createElement('div');
   root.className = 'mq-quiz';
 
-  questions.forEach((q, i) => root.appendChild(buildQuestionEl(q, i)));
+  questions.forEach((q, i) => root.appendChild(buildQuestionEl(q, i, options)));
 
   const scoreEl = document.createElement('div');
   scoreEl.className = 'mq-score';
@@ -97,10 +111,12 @@ function buildDOM(questions: Question[]): HTMLElement {
 export function createQuiz(
   questions: Question[],
   container: HTMLElement,
+  options?: QuizOptions,
 ): QuizInstance {
   let score = 0;
   const answered = new Set<number>();
-  let root = buildDOM(questions);
+  const resolvedOptions = resolveOptions(options);
+  let root = buildDOM(questions, resolvedOptions);
   container.appendChild(root);
 
   function applyResult(qEl: HTMLElement, index: number, correct: boolean, answers: string[]): void {
@@ -241,7 +257,7 @@ export function createQuiz(
       root.removeEventListener('click', handleClick);
       root.removeEventListener('keydown', handleKeydown);
       container.removeChild(root);
-      root = buildDOM(questions);
+      root = buildDOM(questions, resolvedOptions);
       container.appendChild(root);
       root.addEventListener('click', handleClick);
       root.addEventListener('keydown', handleKeydown);
