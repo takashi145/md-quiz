@@ -5,7 +5,7 @@ import { createQuiz } from './quiz.js';
 import type { QuizInstance, QuizOptions } from './quiz.js';
 
 export type { Choice, ParseResult, ParseWarning, ParseWarningCode, Question } from './parser.js';
-export type { QuizAnswerEventDetail, QuizInstance, QuizOptions } from './quiz.js';
+export type { QuizAnswerEventDetail, QuizCompleteEventDetail, QuizInstance, QuizOptions } from './quiz.js';
 
 export async function loadQuiz(
   src: string,

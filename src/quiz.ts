@@ -3,7 +3,6 @@ import type { Question } from './parser.js';
 
 export interface QuizInstance {
   readonly total: number;
-  readonly score: number;
   reset(): void;
 }
 
@@ -11,6 +10,10 @@ export interface QuizAnswerEventDetail {
   index: number;
   correct: boolean;
   answers: string[];
+}
+
+export interface QuizCompleteEventDetail {
+  total: number;
 }
 
 export interface QuizOptions {
@@ -92,19 +95,6 @@ function buildDOM(questions: Question[], options: ResolvedQuizOptions): HTMLElem
 
   questions.forEach((q, i) => root.appendChild(buildQuestionEl(q, i, options)));
 
-  const scoreEl = document.createElement('div');
-  scoreEl.className = 'mq-score';
-  const current = document.createElement('span');
-  current.className = 'mq-score__current';
-  current.textContent = '0';
-  const total = document.createElement('span');
-  total.className = 'mq-score__total';
-  total.textContent = String(questions.length);
-  scoreEl.appendChild(current);
-  scoreEl.append(' / ');
-  scoreEl.appendChild(total);
-  root.appendChild(scoreEl);
-
   return root;
 }
 
@@ -113,7 +103,6 @@ export function createQuiz(
   container: HTMLElement,
   options?: QuizOptions,
 ): QuizInstance {
-  let score = 0;
   const answered = new Set<number>();
   const resolvedOptions = resolveOptions(options);
   let root = buildDOM(questions, resolvedOptions);
@@ -122,8 +111,6 @@ export function createQuiz(
   function applyResult(qEl: HTMLElement, index: number, correct: boolean, answers: string[]): void {
     qEl.classList.add('mq-question--answered');
     qEl.classList.add(correct ? 'mq-question--correct' : 'mq-question--incorrect');
-    if (correct) score++;
-    root.querySelector('.mq-score__current')!.textContent = String(score);
 
     container.dispatchEvent(
       new CustomEvent<QuizAnswerEventDetail>('mq-answer', {
@@ -134,9 +121,9 @@ export function createQuiz(
 
     if (answered.size === questions.length) {
       container.dispatchEvent(
-        new CustomEvent('mq-complete', {
+        new CustomEvent<QuizCompleteEventDetail>('mq-complete', {
           bubbles: true,
-          detail: { score, total: questions.length },
+          detail: { total: questions.length },
         }),
       );
     }
@@ -250,9 +237,7 @@ export function createQuiz(
 
   return {
     get total() { return questions.length; },
-    get score() { return score; },
     reset() {
-      score = 0;
       answered.clear();
       root.removeEventListener('click', handleClick);
       root.removeEventListener('keydown', handleKeydown);
