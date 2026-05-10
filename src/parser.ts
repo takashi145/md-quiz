@@ -8,6 +8,7 @@ export interface Choice {
 
 export interface ChoiceQuestion {
   type: 'choice';
+  subtype: 'single' | 'multiple';
   text: string;
   bodyHtml: string;
   choices: Choice[];
@@ -40,7 +41,8 @@ export interface ParseWarning {
 }
 
 const HEADING_RE = /^##\s+(.+)$/;
-const CHOICE_RE = /^-\s+\[([ x])\]\s+(.+)$/i;
+const SINGLE_CHOICE_RE = /^-\s+\(([ x])\)\s+(.+)$/i;
+const MULTI_CHOICE_RE = /^-\s+\[([ x])\]\s+(.+)$/i;
 
 const FENCE_RE = /^```/;
 const FILL_RE = /\[\[([^\]\n]+)\]\]/g;
@@ -72,23 +74,27 @@ function findFillAnswers(heading: string, lines: string[]): string[] {
   return answers;
 }
 
-function splitBodyAndChoices(lines: string[]): { bodyLines: string[]; choiceLines: string[] } {
+function splitBodyAndChoices(lines: string[]): { bodyLines: string[]; choiceLines: string[]; subtype: 'single' | 'multiple' | null } {
   let firstChoiceIdx = -1;
+  let subtype: 'single' | 'multiple' | null = null;
   let inFence = false;
 
   for (let i = 0; i < lines.length; i++) {
     if (FENCE_RE.test(lines[i])) { inFence = !inFence; continue; }
-    if (!inFence && CHOICE_RE.test(lines[i])) { firstChoiceIdx = i; break; }
+    if (!inFence && SINGLE_CHOICE_RE.test(lines[i])) { firstChoiceIdx = i; subtype = 'single'; break; }
+    if (!inFence && MULTI_CHOICE_RE.test(lines[i])) { firstChoiceIdx = i; subtype = 'multiple'; break; }
   }
 
-  if (firstChoiceIdx === -1) return { bodyLines: lines, choiceLines: [] };
+  if (firstChoiceIdx === -1) return { bodyLines: lines, choiceLines: [], subtype: null };
 
   let bodyEnd = firstChoiceIdx;
   while (bodyEnd > 0 && lines[bodyEnd - 1].trim() === '') bodyEnd--;
 
+  const re = subtype === 'single' ? SINGLE_CHOICE_RE : MULTI_CHOICE_RE;
   return {
     bodyLines: lines.slice(0, bodyEnd),
-    choiceLines: lines.slice(firstChoiceIdx).filter((l) => CHOICE_RE.test(l)),
+    choiceLines: lines.slice(firstChoiceIdx).filter((l) => re.test(l)),
+    subtype,
   };
 }
 
@@ -125,9 +131,10 @@ export function parse(markdown: string): ParseResult {
       continue;
     }
 
-    const { bodyLines, choiceLines } = splitBodyAndChoices(section.lines);
+    const { bodyLines, choiceLines, subtype } = splitBodyAndChoices(section.lines);
+    const re = subtype === 'single' ? SINGLE_CHOICE_RE : MULTI_CHOICE_RE;
     const choices: Choice[] = choiceLines.map((l) => {
-      const m = l.match(CHOICE_RE)!;
+      const m = l.match(re)!;
       return { text: m[2].trim(), correct: m[1].toLowerCase() === 'x' };
     });
 
@@ -149,10 +156,10 @@ export function parse(markdown: string): ParseResult {
         heading: section.heading,
         line: section.line,
       });
-    } else if (correctCount > 1) {
+    } else if (subtype === 'single' && correctCount > 1) {
       warnings.push({
         code: 'choice-with-multiple-correct-answers',
-        message: 'Choice question has multiple correct answers.',
+        message: 'Single-choice question has multiple correct answers.',
         heading: section.heading,
         line: section.line,
       });
@@ -160,6 +167,7 @@ export function parse(markdown: string): ParseResult {
 
     questions.push({
       type: 'choice',
+      subtype: subtype!,
       text: parseInline(section.heading),
       bodyHtml: renderBlock(bodyLines),
       choices,
