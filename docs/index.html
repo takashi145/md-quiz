@@ -17,6 +17,7 @@
     const app = document.getElementById('app');
     const quiz = await loadQuiz('./quiz.md', app, {
       submitLabel: '回答する',
+      autoDisableSubmit: true,
     });
 
     app.addEventListener('mq-answer', (e) => {

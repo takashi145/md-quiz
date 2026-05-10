@@ -18,23 +18,27 @@ export interface QuizCompleteEventDetail {
 
 export interface QuizOptions {
   submitLabel?: string;
+  autoDisableSubmit?: boolean;
 }
 
 interface ResolvedQuizOptions {
   submitLabel: string;
+  autoDisableSubmit: boolean;
 }
 
 function resolveOptions(options: QuizOptions = {}): ResolvedQuizOptions {
   return {
     submitLabel: options.submitLabel ?? '確認',
+    autoDisableSubmit: options.autoDisableSubmit ?? false,
   };
 }
 
-function buildSubmitButton(label: string): HTMLButtonElement {
+function buildSubmitButton(options: ResolvedQuizOptions): HTMLButtonElement {
   const btn = document.createElement('button');
   btn.className = 'mq-submit';
   btn.type = 'button';
-  btn.textContent = label;
+  btn.disabled = options.autoDisableSubmit;
+  btn.textContent = options.submitLabel;
   return btn;
 }
 
@@ -81,9 +85,9 @@ function buildQuestionEl(q: Question, index: number, options: ResolvedQuizOption
       ul.appendChild(li);
     }
     qEl.appendChild(ul);
-    qEl.appendChild(buildSubmitButton(options.submitLabel));
+    qEl.appendChild(buildSubmitButton(options));
   } else {
-    qEl.appendChild(buildSubmitButton(options.submitLabel));
+    qEl.appendChild(buildSubmitButton(options));
   }
 
   return qEl;
@@ -108,6 +112,29 @@ export function createQuiz(
   let root = buildDOM(questions, resolvedOptions);
   container.appendChild(root);
 
+  function isQuestionReady(qEl: HTMLElement): boolean {
+    if (qEl.classList.contains('mq-question--single')) {
+      return Array.from(qEl.querySelectorAll<HTMLInputElement>('.mq-radio'))
+        .some((radio) => radio.checked);
+    }
+
+    if (qEl.classList.contains('mq-question--multiple')) {
+      return Array.from(qEl.querySelectorAll<HTMLInputElement>('.mq-checkbox'))
+        .some((checkbox) => checkbox.checked);
+    }
+
+    const inputs = Array.from(qEl.querySelectorAll<HTMLInputElement>('.mq-input'));
+    return inputs.length > 0 && inputs.every((input) => input.value.trim() !== '');
+  }
+
+  function updateSubmitState(qEl: HTMLElement): void {
+    if (!resolvedOptions.autoDisableSubmit) return;
+    if (qEl.classList.contains('mq-question--answered')) return;
+    const btn = qEl.querySelector<HTMLButtonElement>('.mq-submit');
+    if (!btn) return;
+    btn.disabled = !isQuestionReady(qEl);
+  }
+
   function applyResult(qEl: HTMLElement, index: number, correct: boolean, answers: string[]): void {
     qEl.classList.add('mq-question--answered');
     qEl.classList.add(correct ? 'mq-question--correct' : 'mq-question--incorrect');
@@ -131,6 +158,7 @@ export function createQuiz(
 
   function submitSingleChoice(qEl: HTMLElement, index: number): void {
     if (answered.has(index)) return;
+    if (resolvedOptions.autoDisableSubmit && !isQuestionReady(qEl)) return;
     const radios = Array.from(qEl.querySelectorAll<HTMLInputElement>('.mq-radio'));
     const checked = radios.find((r) => r.checked);
     if (!checked) return;
@@ -157,6 +185,7 @@ export function createQuiz(
 
   function submitMultiChoice(qEl: HTMLElement, index: number): void {
     if (answered.has(index)) return;
+    if (resolvedOptions.autoDisableSubmit && !isQuestionReady(qEl)) return;
     answered.add(index);
 
     const checkboxes = Array.from(qEl.querySelectorAll<HTMLInputElement>('.mq-checkbox'));
@@ -182,6 +211,7 @@ export function createQuiz(
 
   function submitFill(qEl: HTMLElement, index: number): void {
     if (answered.has(index)) return;
+    if (resolvedOptions.autoDisableSubmit && !isQuestionReady(qEl)) return;
     const inputs = qEl.querySelectorAll<HTMLInputElement>('.mq-input');
     if (inputs.length === 0) return;
     answered.add(index);
@@ -221,6 +251,20 @@ export function createQuiz(
     }
   }
 
+  function handleInput(e: Event): void {
+    const target = e.target as Element;
+    if (
+      !target.classList.contains('mq-radio')
+      && !target.classList.contains('mq-checkbox')
+      && !target.classList.contains('mq-input')
+    ) {
+      return;
+    }
+
+    const qEl = target.closest<HTMLElement>('.mq-question');
+    if (qEl) updateSubmitState(qEl);
+  }
+
   function handleKeydown(e: Event): void {
     const ke = e as KeyboardEvent;
     if (ke.key !== 'Enter') return;
@@ -233,6 +277,10 @@ export function createQuiz(
   }
 
   root.addEventListener('click', handleClick);
+  if (resolvedOptions.autoDisableSubmit) {
+    root.addEventListener('change', handleInput);
+    root.addEventListener('input', handleInput);
+  }
   root.addEventListener('keydown', handleKeydown);
 
   return {
@@ -240,11 +288,19 @@ export function createQuiz(
     reset() {
       answered.clear();
       root.removeEventListener('click', handleClick);
+      if (resolvedOptions.autoDisableSubmit) {
+        root.removeEventListener('change', handleInput);
+        root.removeEventListener('input', handleInput);
+      }
       root.removeEventListener('keydown', handleKeydown);
       container.removeChild(root);
       root = buildDOM(questions, resolvedOptions);
       container.appendChild(root);
       root.addEventListener('click', handleClick);
+      if (resolvedOptions.autoDisableSubmit) {
+        root.addEventListener('change', handleInput);
+        root.addEventListener('input', handleInput);
+      }
       root.addEventListener('keydown', handleKeydown);
     },
   };
