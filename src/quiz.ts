@@ -15,7 +15,9 @@ export interface QuizAnswerEventDetail {
 
 function buildQuestionEl(q: Question, index: number): HTMLElement {
   const qEl = document.createElement('div');
-  qEl.className = `mq-question mq-question--${q.type}`;
+  qEl.className = q.type === 'choice'
+    ? `mq-question mq-question--choice mq-question--${q.subtype}`
+    : 'mq-question mq-question--fill';
   qEl.dataset.index = String(index);
 
   const body = document.createElement('div');
@@ -39,15 +41,26 @@ function buildQuestionEl(q: Question, index: number): HTMLElement {
     ul.className = 'mq-choices';
     for (const c of q.choices) {
       const li = document.createElement('li');
-      const btn = document.createElement('button');
-      btn.className = 'mq-choice';
-      btn.type = 'button';
-      btn.dataset.correct = String(c.correct);
-      btn.innerHTML = parseInline(c.text);
-      li.appendChild(btn);
+      const label = document.createElement('label');
+      label.className = 'mq-choice';
+      const input = document.createElement('input');
+      input.type = q.subtype === 'single' ? 'radio' : 'checkbox';
+      input.className = q.subtype === 'single' ? 'mq-radio' : 'mq-checkbox';
+      if (q.subtype === 'single') input.name = `mq-q${index}`;
+      input.dataset.correct = String(c.correct);
+      const span = document.createElement('span');
+      span.innerHTML = parseInline(c.text);
+      label.appendChild(input);
+      label.appendChild(span);
+      li.appendChild(label);
       ul.appendChild(li);
     }
     qEl.appendChild(ul);
+    const btn = document.createElement('button');
+    btn.className = 'mq-submit';
+    btn.type = 'button';
+    btn.textContent = '確認';
+    qEl.appendChild(btn);
   } else {
     const btn = document.createElement('button');
     btn.className = 'mq-submit';
@@ -113,17 +126,55 @@ export function createQuiz(
     }
   }
 
-  function submitChoice(qEl: HTMLElement, choice: HTMLElement, index: number): void {
+  function submitSingleChoice(qEl: HTMLElement, index: number): void {
+    if (answered.has(index)) return;
+    const radios = Array.from(qEl.querySelectorAll<HTMLInputElement>('.mq-radio'));
+    const checked = radios.find((r) => r.checked);
+    if (!checked) return;
+    answered.add(index);
+
+    const correct = checked.dataset.correct === 'true';
+    radios.forEach((r) => {
+      r.disabled = true;
+      const choice = r.closest<HTMLElement>('.mq-choice');
+      if (!choice) return;
+      if (r.checked) choice.classList.add('mq-choice--selected');
+      if (r.dataset.correct === 'true') choice.classList.add('mq-choice--correct');
+    });
+
+    const btn = qEl.querySelector<HTMLButtonElement>('.mq-submit');
+    if (btn) btn.disabled = true;
+
+    const answers = radios
+      .filter((r) => r.dataset.correct === 'true')
+      .map((r) => r.nextElementSibling?.textContent?.trim() ?? '');
+
+    applyResult(qEl, index, correct, answers);
+  }
+
+  function submitMultiChoice(qEl: HTMLElement, index: number): void {
     if (answered.has(index)) return;
     answered.add(index);
 
-    const correct = choice.dataset.correct === 'true';
-    choice.classList.add('mq-choice--selected');
-    const answers = Array.from(qEl.querySelectorAll<HTMLElement>('[data-correct="true"]'));
-    answers.forEach((el) => {
-      el.classList.add('mq-choice--correct');
+    const checkboxes = Array.from(qEl.querySelectorAll<HTMLInputElement>('.mq-checkbox'));
+    const correct = checkboxes.every((cb) => cb.checked === (cb.dataset.correct === 'true'));
+
+    checkboxes.forEach((cb) => {
+      cb.disabled = true;
+      const choice = cb.closest<HTMLElement>('.mq-choice');
+      if (!choice) return;
+      if (cb.checked) choice.classList.add('mq-choice--selected');
+      if (cb.dataset.correct === 'true') choice.classList.add('mq-choice--correct');
     });
-    applyResult(qEl, index, correct, answers.map((el) => el.textContent?.trim() ?? ''));
+
+    const btn = qEl.querySelector<HTMLButtonElement>('.mq-submit');
+    if (btn) btn.disabled = true;
+
+    const answers = checkboxes
+      .filter((cb) => cb.dataset.correct === 'true')
+      .map((cb) => cb.nextElementSibling?.textContent?.trim() ?? '');
+
+    applyResult(qEl, index, correct, answers);
   }
 
   function submitFill(qEl: HTMLElement, index: number): void {
@@ -151,21 +202,19 @@ export function createQuiz(
   function handleClick(e: Event): void {
     const target = e.target as Element;
 
-    const choice = target.closest<HTMLElement>('.mq-choice');
-    if (choice) {
-      const qEl = choice.closest<HTMLElement>('.mq-question');
-      if (!qEl) return;
-      const index = parseInt(qEl.dataset.index ?? '', 10);
-      if (!Number.isNaN(index)) submitChoice(qEl, choice, index);
-      return;
-    }
-
     const btn = target.closest<HTMLElement>('.mq-submit');
     if (btn) {
       const qEl = btn.closest<HTMLElement>('.mq-question');
       if (!qEl) return;
       const index = parseInt(qEl.dataset.index ?? '', 10);
-      if (!Number.isNaN(index)) submitFill(qEl, index);
+      if (Number.isNaN(index)) return;
+      if (qEl.classList.contains('mq-question--single')) {
+        submitSingleChoice(qEl, index);
+      } else if (qEl.classList.contains('mq-question--multiple')) {
+        submitMultiChoice(qEl, index);
+      } else {
+        submitFill(qEl, index);
+      }
     }
   }
 
