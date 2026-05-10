@@ -1,5 +1,5 @@
 import { parseInline } from './inline.js';
-import type { Question } from './parser.js';
+import type { Choice, Question } from './parser.js';
 
 export interface QuizInstance {
   readonly total: number;
@@ -19,18 +19,34 @@ export interface QuizCompleteEventDetail {
 export interface QuizOptions {
   submitLabel?: string;
   autoDisableSubmit?: boolean;
+  shuffleChoices?: boolean;
 }
 
 interface ResolvedQuizOptions {
   submitLabel: string;
   autoDisableSubmit: boolean;
+  shuffleChoices: boolean;
 }
 
 function resolveOptions(options: QuizOptions = {}): ResolvedQuizOptions {
   return {
     submitLabel: options.submitLabel ?? '確認',
     autoDisableSubmit: options.autoDisableSubmit ?? false,
+    shuffleChoices: options.shuffleChoices ?? false,
   };
+}
+
+function shuffle<T>(items: T[]): T[] {
+  const shuffled = [...items];
+  for (let i = shuffled.length - 1; i > 0; i--) {
+    const j = Math.floor(Math.random() * (i + 1));
+    [shuffled[i], shuffled[j]] = [shuffled[j], shuffled[i]];
+  }
+  return shuffled;
+}
+
+function getChoices(choices: Choice[], options: ResolvedQuizOptions): Choice[] {
+  return options.shuffleChoices ? shuffle(choices) : choices;
 }
 
 function buildSubmitButton(options: ResolvedQuizOptions): HTMLButtonElement {
@@ -68,7 +84,7 @@ function buildQuestionEl(q: Question, index: number, options: ResolvedQuizOption
   if (q.type === 'choice') {
     const ul = document.createElement('ul');
     ul.className = 'mq-choices';
-    for (const c of q.choices) {
+    for (const c of getChoices(q.choices, options)) {
       const li = document.createElement('li');
       const label = document.createElement('label');
       label.className = 'mq-choice';

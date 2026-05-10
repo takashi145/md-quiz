@@ -18,6 +18,7 @@
     const quiz = await loadQuiz('./quiz.md', app, {
       submitLabel: '回答する',
       autoDisableSubmit: true,
+      shuffleChoices: true,
     });
 
     app.addEventListener('mq-answer', (e) => {
