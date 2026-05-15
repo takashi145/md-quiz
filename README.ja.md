@@ -125,6 +125,7 @@ interface QuizAnswerEventDetail {
 ```ts
 interface QuizCompleteEventDetail {
   total: number;
+  score: number;
 }
 ```
 

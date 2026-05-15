@@ -57,7 +57,7 @@
         border-radius: 12px; text-align: center;
         font-weight: 700; font-size: 1.125rem; color: #4338ca;
       `;
-      banner.textContent = `クイズ完了！ 全 ${e.detail.total} 問に回答しました`;
+      banner.textContent = `クイズ完了！ ${e.detail.total} 問中 ${e.detail.score} 問正解`;
       app.appendChild(banner);
     });
   </script>

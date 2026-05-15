@@ -124,6 +124,7 @@ After all questions have been answered, `mq-complete` is fired.
 ```ts
 interface QuizCompleteEventDetail {
   total: number;
+  score: number;
 }
 ```
 

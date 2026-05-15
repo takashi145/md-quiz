@@ -15,6 +15,7 @@ export interface QuizAnswerEventDetail {
 
 export interface QuizCompleteEventDetail {
   total: number;
+  score: number;
 }
 
 export interface QuizOptions {
@@ -131,7 +132,7 @@ export function createQuiz(
   container: HTMLElement,
   options?: QuizOptions,
 ): QuizInstance {
-  const answered = new Set<number>();
+  const answered = new Map<number, boolean>();
   const resolvedOptions = resolveOptions(options);
   let activeQuestions = getQuestions(questions, resolvedOptions);
   let root = buildDOM(activeQuestions, resolvedOptions);
@@ -181,10 +182,11 @@ export function createQuiz(
     );
 
     if (answered.size === activeQuestions.length) {
+      const score = [...answered.values()].filter(Boolean).length;
       container.dispatchEvent(
         new CustomEvent<QuizCompleteEventDetail>('mq-complete', {
           bubbles: true,
-          detail: { total: activeQuestions.length },
+          detail: { total: activeQuestions.length, score },
         }),
       );
     }
@@ -196,9 +198,8 @@ export function createQuiz(
     const radios = Array.from(qEl.querySelectorAll<HTMLInputElement>('.mq-radio'));
     const checked = radios.find((r) => r.checked);
     if (!checked) return;
-    answered.add(index);
-
     const correct = checked.dataset.correct === 'true';
+    answered.set(index, correct);
     radios.forEach((r) => {
       r.disabled = true;
       const choice = r.closest<HTMLElement>('.mq-choice');
@@ -220,10 +221,9 @@ export function createQuiz(
   function submitMultiChoice(qEl: HTMLElement, index: number): void {
     if (answered.has(index)) return;
     if (resolvedOptions.autoDisableSubmit && !isQuestionReady(qEl)) return;
-    answered.add(index);
-
     const checkboxes = Array.from(qEl.querySelectorAll<HTMLInputElement>('.mq-checkbox'));
     const correct = checkboxes.every((cb) => cb.checked === (cb.dataset.correct === 'true'));
+    answered.set(index, correct);
 
     checkboxes.forEach((cb) => {
       cb.disabled = true;
@@ -248,8 +248,6 @@ export function createQuiz(
     if (resolvedOptions.autoDisableSubmit && !isQuestionReady(qEl)) return;
     const inputs = qEl.querySelectorAll<HTMLInputElement>('.mq-input');
     if (inputs.length === 0) return;
-    answered.add(index);
-
     const q = activeQuestions[index] as import('./parser.js').FillQuestion;
     let correct = true;
     const inputResults: boolean[] = [];
@@ -261,6 +259,7 @@ export function createQuiz(
       input.disabled = true;
       input.classList.add(ok ? 'mq-input--correct' : 'mq-input--incorrect');
     });
+    answered.set(index, correct);
 
     const btn = qEl.querySelector<HTMLButtonElement>('.mq-submit');
     if (btn) btn.disabled = true;
