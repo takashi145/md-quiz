@@ -18,7 +18,7 @@ export interface FillQuestion {
   type: 'fill';
   text: string;
   bodyHtml: string;
-  answers: string[];
+  answers: string[][];
 }
 
 export type Question = ChoiceQuestion | FillQuestion;
@@ -55,11 +55,11 @@ function injectInput(html: string): string {
   );
 }
 
-function findFillAnswers(heading: string, lines: string[]): string[] {
-  const answers: string[] = [];
+function findFillAnswers(heading: string, lines: string[]): string[][] {
+  const answers: string[][] = [];
 
   for (const m of heading.replace(/`[^`]+`/g, '').matchAll(FILL_RE)) {
-    answers.push(m[1].trim());
+    answers.push(m[1].split('|').map((s) => s.trim()).filter(Boolean));
   }
 
   let inFence = false;
@@ -67,7 +67,7 @@ function findFillAnswers(heading: string, lines: string[]): string[] {
     if (FENCE_RE.test(line)) { inFence = !inFence; continue; }
     if (inFence) continue;
     for (const m of line.replace(/`[^`]+`/g, '').matchAll(FILL_RE)) {
-      answers.push(m[1].trim());
+      answers.push(m[1].split('|').map((s) => s.trim()).filter(Boolean));
     }
   }
 
