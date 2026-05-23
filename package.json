@@ -1,6 +1,6 @@
 {
 	"name": "@takashi145/md-quiz",
-	"version": "0.1.0",
+	"version": "0.2.0",
 	"description": "Generate interactive quizzes from Markdown.",
 	"type": "module",
 	"main": "./dist/md-quiz.js",
