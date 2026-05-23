@@ -88,6 +88,12 @@ const quiz = createQuiz(questions, container);
 Use arr.[[length]] to get an array length.
 ```
 
+`|` 区切りで複数の正解候補を設定できます。
+
+```md
+## 日本の首都は [[東京|とうきょう]] です。
+```
+
 ## Options
 
 ```ts
@@ -99,7 +105,7 @@ interface QuizOptions {
 }
 ```
 
-- `submitLabel`: 回答ボタンの文言です。デフォルトは `確認`。
+- `submitLabel`: 回答ボタンの文言です。デフォルトは `Submit`。
 - `autoDisableSubmit`: `true` の場合、未選択または未入力の間は回答ボタンを disabled にします。デフォルトは `false`。
 - `shuffleChoices`: `true` の場合、選択肢の表示順をシャッフルします。デフォルトは `false`。
 - `shuffleQuestions`: `true` の場合、問題の表示順をシャッフルします。デフォルトは `false`。

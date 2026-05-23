@@ -88,6 +88,12 @@ You can also place blanks in the body text.
 Use arr.[[length]] to get an array length.
 ```
 
+To accept multiple correct answers, separate them with `|`.
+
+```md
+## The capital of the UK is [[London|london]].
+```
+
 ## Options
 
 ```ts
@@ -99,7 +105,7 @@ interface QuizOptions {
 }
 ```
 
-- `submitLabel`: Label for the submit button. Defaults to `確認`.
+- `submitLabel`: Label for the submit button. Defaults to `Submit`.
 - `autoDisableSubmit`: When `true`, the submit button is disabled until all questions have a selection or input. Defaults to `false`.
 - `shuffleChoices`: When `true`, choice order is randomized. Defaults to `false`.
 - `shuffleQuestions`: When `true`, question order is randomized. Defaults to `false`.
