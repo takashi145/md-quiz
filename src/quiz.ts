@@ -252,8 +252,9 @@ export function createQuiz(
     let correct = true;
     const inputResults: boolean[] = [];
     Array.from(inputs).forEach((input, i) => {
-      const expected = q.answers[i] ?? '';
-      const ok = input.value.trim().toLowerCase() === expected.trim().toLowerCase();
+      const alternatives = q.answers[i] ?? [];
+      const val = input.value.trim().toLowerCase();
+      const ok = alternatives.some((a) => val === a.trim().toLowerCase());
       inputResults.push(ok);
       if (!ok) correct = false;
       input.disabled = true;
@@ -264,7 +265,7 @@ export function createQuiz(
     const btn = qEl.querySelector<HTMLButtonElement>('.mq-submit');
     if (btn) btn.disabled = true;
 
-    applyResult(qEl, index, correct, q.answers, inputResults);
+    applyResult(qEl, index, correct, q.answers.map((alts) => alts.join(' | ')), inputResults);
   }
 
   function handleClick(e: Event): void {
