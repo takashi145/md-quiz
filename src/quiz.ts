@@ -34,7 +34,7 @@ interface ResolvedQuizOptions {
 
 function resolveOptions(options: QuizOptions = {}): ResolvedQuizOptions {
   return {
-    submitLabel: options.submitLabel ?? '確認',
+    submitLabel: options.submitLabel ?? 'Submit',
     autoDisableSubmit: options.autoDisableSubmit ?? false,
     shuffleChoices: options.shuffleChoices ?? false,
     shuffleQuestions: options.shuffleQuestions ?? false,
